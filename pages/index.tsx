@@ -1,0 +1,23 @@
+import type { NextPage } from 'next'
+import Head from 'next/head'
+import Header from '../components/Header'
+import LotteryEntrance from '../components/LotteryEntrance'
+import ManualHeader from '../components/ManualHeader'
+
+const Home: NextPage = () => {
+    return (
+        <div>
+            <Head>
+                <title>Smart Contract Lottery</title>
+                <meta name="description" content="Our Smart Contract Lottery" />
+                <link rel="icon" href="/favicon.ico" />
+            </Head>
+            {/* <ManualHeader /> */}
+            <Header />
+
+            <LotteryEntrance />
+        </div>
+    )
+}
+
+export default Home
