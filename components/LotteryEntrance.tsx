@@ -1,13 +1,14 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useWeb3Contract, useMoralis } from 'react-moralis'
-import contract from '../constants'
-import { ContractTransaction, ethers } from 'ethers'
+import contract, { RPC_URL } from '../constants'
+import { ContractTransaction, ethers, Contract } from 'ethers'
 import { useNotification } from 'web3uikit'
 
 const { contractAbi: abi, contractAddresses } = contract
 
 const LotteryEntrance: React.FC = () => {
-    const { chainId: chainIdHex, isWeb3Enabled } = useMoralis()
+    const { chainId: chainIdHex, isWeb3Enabled, account, auth } = useMoralis()
+
     const chainId = parseInt(chainIdHex as string).toString()
     const raffleAddress =
         chainId in contractAddresses
@@ -49,7 +50,7 @@ const LotteryEntrance: React.FC = () => {
         functionName: 'getRecentWinner',
     })
 
-    const updateUI = async () => {
+    const updateUI = useCallback(async () => {
         if (isWeb3Enabled) {
             const entranceFee = ((await getEntranceFee()) as any).toString()
             const numPlayers = ((await getNumberOfPlayers()) as any).toNumber()
@@ -60,11 +61,26 @@ const LotteryEntrance: React.FC = () => {
             setEntranceFee(entranceFee)
             console.log({ entranceFee })
         }
-    }
+    }, [getEntranceFee, getNumberOfPlayers, getRecentWinner, isWeb3Enabled])
 
     useEffect(() => {
         updateUI()
-    }, [isWeb3Enabled])
+    }, [isWeb3Enabled, updateUI])
+
+    useEffect(() => {
+        if (raffleAddress && account) {
+            const provider = new ethers.providers.JsonRpcProvider(RPC_URL)
+            const raffleContract = new Contract(
+                raffleAddress,
+                new ethers.utils.Interface(abi as any),
+                new ethers.VoidSigner(account, provider)
+            )
+            raffleContract.on('WinnerPicked', () => {
+                console.log('winner Picked')
+                updateUI()
+            })
+        }
+    }, [raffleAddress, account, updateUI])
 
     const handleSuccess = async (tx: ContractTransaction) => {
         await tx.wait(1)
